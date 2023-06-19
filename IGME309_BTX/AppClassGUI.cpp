@@ -13,7 +13,6 @@ void Application::DrawGUI(void)
 		ImGui::SetNextWindowSize(ImVec2(340, 60), ImGuiSetCond_FirstUseEver);
 		//String sAbout = m_pSystem->GetAppName() + " - About";
 		String sAbout = "System About";
-		//ImGui::SetWindowFontScale(1.5f);
 		ImGui::Begin(sAbout.c_str(), (bool*)0, window_flags);
 		{
 			ImGui::Text("Application: %s", m_pSystem->GetAppName().c_str());

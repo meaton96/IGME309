@@ -2,7 +2,7 @@
 void Application::InitVariables(void)
 {
 	////Change this to your name and email
-	m_sProgrammer = "Alberto Bobadilla - labigm@rit.edu";
+	m_sProgrammer = "Michael Eaton - me3870@rit.edu";
 	vector3 v3Position(0.0f, 0.0f, 10.0f);
 	vector3 v3Target = ZERO_V3;
 	vector3 v3Upward = AXIS_Y;
@@ -11,7 +11,7 @@ void Application::InitVariables(void)
 	//Make MyMesh object
 	m_pMesh = new MyMesh();
 	//Generate a circle
-	m_pMesh->GenerateCircle(2.0f, 5, C_RED);
+	m_pMesh->GenerateCircle(2.0f, 4, C_RED);
 }
 void Application::Update(void)
 {

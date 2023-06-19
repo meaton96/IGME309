@@ -1,4 +1,5 @@
 #include "MyMesh.h"
+#include <cmath>
 void MyMesh::GenerateCircle(float a_fRadius, int a_nSubdivisions, vector3 a_v3Color)
 {
 	Release();
@@ -16,14 +17,36 @@ void MyMesh::GenerateCircle(float a_fRadius, int a_nSubdivisions, vector3 a_v3Co
 		Calculate a_nSubdivisions number of points around a center point in a radial manner
 		then call the AddTri function to generate a_nSubdivision number of faces
 	*/
-	AddTri(	vector3(0.0f, 0.0f, 0.0f),
-			vector3(1.0f, 0.0f, 0.0f),
-			vector3(0.77f, 0.77f, 0.0f));
 
-	// Adding information about color
+	vector3 origin(0.0f, 0.0f, 0.0f);
+	vector3 point1, point2;
+
+	float innerAngle = 2 * PI / a_nSubdivisions;
+
+	for (int x = 0; x < a_nSubdivisions; x++) {
+		point1 = vector3(
+			cos(x * innerAngle),
+			sin(x * innerAngle),
+			0.0f
+		);
+		point2 = vector3(
+			cos((x + 1) * innerAngle),
+			sin((x + 1) * innerAngle),
+			0.0f
+		);
+		AddTri(origin, point1, point2);
+	}
+
+
+	/*AddTri(	vector3(0.0f, 0.0f, 0.0f),
+			vector3(1.0f, 0.0f, 0.0f),
+			vector3(0.77f, 0.77f, 0.0f));*/
+
+			// Adding information about color
 	CompleteMesh(a_v3Color);
 	CompileOpenGL3X();
 }
+
 void MyMesh::Init(void)
 {
 	m_bBinded = false;
@@ -130,7 +153,7 @@ void MyMesh::CompileOpenGL3X(void)
 	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);//Bind the VBO
 	glBufferData(GL_ARRAY_BUFFER, m_uVertexCount * 2 * sizeof(vector3), &m_lVertex[0], GL_STATIC_DRAW);//Generate space for the VBO
 
-																									   // Position attribute
+	// Position attribute
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 2 * sizeof(vector3), (GLvoid*)0);
 
@@ -221,7 +244,7 @@ void MyMesh::GenerateCube(float a_fSize, vector3 a_v3Color)
 	vector3 point6(fValue, fValue, -fValue); //6
 	vector3 point7(-fValue, fValue, -fValue); //7
 
-											  //F
+	//F
 	AddQuad(point0, point1, point3, point2);
 
 	//B
@@ -262,7 +285,7 @@ void MyMesh::GenerateCuboid(vector3 a_v3Dimensions, vector3 a_v3Color)
 	vector3 point6(v3Value.x, v3Value.y, -v3Value.z); //6
 	vector3 point7(-v3Value.x, v3Value.y, -v3Value.z); //7
 
-													   //F
+	//F
 	AddQuad(point0, point1, point3, point2);
 
 	//B

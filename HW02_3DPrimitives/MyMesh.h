@@ -29,6 +29,8 @@ class MyMesh
 	ShaderManager* m_pShaderMngr = nullptr;	//Shader Manager
 
 public:
+	void SubdivideTriangularMeshToRadius(vector3, vector3, vector3, float, int);
+	void Normalize(vector3& vec);
 	/*
 	USAGE: Initialize the object's fields
 	ARGUMENTS: ---

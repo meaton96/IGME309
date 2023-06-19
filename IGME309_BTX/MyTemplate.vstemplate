@@ -1,0 +1,28 @@
+<VSTemplate Version="3.0.0" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005" Type="Project">
+  <TemplateData>
+    <Name>C09_Base</Name>
+    <Description>IGME309_BTX</Description>
+    <ProjectType>VC</ProjectType>
+    <ProjectSubType>
+    </ProjectSubType>
+    <SortOrder>1000</SortOrder>
+    <CreateNewFolder>true</CreateNewFolder>
+    <DefaultName>C09_Base</DefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
+    <LocationField>Enabled</LocationField>
+    <EnableLocationBrowseButton>true</EnableLocationBrowseButton>
+    <Icon>__TemplateIcon.ico</Icon>
+  </TemplateData>
+  <TemplateContent>
+    <Project TargetFileName="C09_Base.vcxproj" File="C09_Base.vcxproj" ReplaceParameters="true">
+      <ProjectItem ReplaceParameters="false" TargetFileName="$projectname$.vcxproj.filters">C09_Base.vcxproj.filters</ProjectItem>
+      <ProjectItem ReplaceParameters="false" TargetFileName="AppClass.cpp">AppClass.cpp</ProjectItem>
+      <ProjectItem ReplaceParameters="false" TargetFileName="AppClassControls.cpp">AppClassControls.cpp</ProjectItem>
+      <ProjectItem ReplaceParameters="false" TargetFileName="AppClassGUI.cpp">AppClassGUI.cpp</ProjectItem>
+      <ProjectItem ReplaceParameters="false" TargetFileName="AppClassMain.cpp">AppClassMain.cpp</ProjectItem>
+      <ProjectItem ReplaceParameters="false" TargetFileName="Main.cpp">Main.cpp</ProjectItem>
+      <ProjectItem ReplaceParameters="false" TargetFileName="AppClass.h">AppClass.h</ProjectItem>
+      <ProjectItem ReplaceParameters="false" TargetFileName="Main.h">Main.h</ProjectItem>
+    </Project>
+  </TemplateContent>
+</VSTemplate>

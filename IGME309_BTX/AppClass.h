@@ -14,15 +14,12 @@ Update: 2021/02
 
 #include "imgui\ImGuiObject.h"
 
-#include "MyMesh.h"
-
 using namespace BTX;
 
 class Application
 {
-	MyMesh* m_pMesh;
 private:
-	String m_sProgrammer = "Michael Eaton - me3870@rit.edu";
+	String m_sProgrammer = "Alberto Bobadilla - labigm@rit.edu";
 	static ImGuiObject gui; //GUI object
 
 	uint m_uRenderCallCount = 0; //count of render calls per frame
@@ -45,17 +42,6 @@ private:
 	bool m_bFocused = true; //is the window focused?
 	float m_fMovementSpeed = 0.1f; //how fast the camera will move
 	bool m_bModifier = false; //is shift pressed?
-
-	bool drawing[8][11] = {
-		{ false, false, true, false, false, false, false, false, true, false, false },
-		{ false, false, false, true, false, false, false, true, false, false, false },
-		{ false, false, true, true, true, true, true, true, true, false, false },
-		{ false, true, true, false, true, true, true, false, true, true, false },
-		{ true, true, true, true, true, true, true, true, true, true, true },
-		{ true, false, true, true, true, true, true, true, true, false, true },
-		{ true, false, true, false, false, false, false, false, true, false, true },
-		{ false, false, false, true, true, false, true, true, false, false, false }
-	};
 
 public:
 #pragma region Constructor / Run / Destructor

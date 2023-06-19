@@ -44,6 +44,40 @@ void MyMesh::GenerateCube(float a_fSize, vector3 a_v3Color)
 	CompleteMesh(a_v3Color);
 	CompileOpenGL3X();
 }
+void MyMesh::SubdivideTriangularMeshToRadius(vector3 t_v1, vector3 t_v2, vector3 t_v3, float radius, int steps)
+{
+	vector3 a_v1v2 = (t_v1 + t_v2) / 2;
+	vector3 a_v2v3 = (t_v2 + t_v3) / 2;
+	vector3 a_v3v1 = (t_v3 + t_v1) / 2;
+
+	Normalize(a_v1v2);
+	Normalize(a_v2v3);
+	Normalize(a_v3v1);
+
+	a_v1v2 = a_v1v2 * radius;
+	a_v2v3 = a_v2v3 * radius;
+	a_v3v1 = a_v3v1 * radius;
+
+	if (steps == 1) {
+		AddTri(t_v1, a_v3v1, a_v1v2);
+		AddTri(t_v2, a_v1v2, a_v2v3);
+		AddTri(a_v2v3, a_v3v1, t_v3);
+		AddTri(a_v2v3, a_v1v2, a_v3v1);
+	}
+	else {
+		SubdivideTriangularMeshToRadius(t_v1, a_v3v1, a_v1v2, radius, steps - 1);
+		SubdivideTriangularMeshToRadius(t_v2, a_v1v2, a_v2v3, radius, steps - 1);
+		SubdivideTriangularMeshToRadius(a_v2v3, a_v3v1, t_v3, radius, steps - 1);
+		SubdivideTriangularMeshToRadius(a_v2v3, a_v1v2, a_v3v1, radius, steps - 1);
+	}
+
+
+}
+void MyMesh::Normalize(vector3& vec)
+{
+	float length = sqrt(pow(vec.x, 2) + pow(vec.y, 2) + pow(vec.z, 2));
+	vec = vec / length;
+}
 void MyMesh::GenerateCone(float a_fRadius, float a_fHeight, int a_nSubdivisions, vector3 a_v3Color)
 {
 	if (a_fRadius < 0.01f)
@@ -60,9 +94,32 @@ void MyMesh::GenerateCone(float a_fRadius, float a_fHeight, int a_nSubdivisions,
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
-	// -------------------------------
+
+
+	//Generate 
+	vector3 origin(0.0f, 0.0f, 0.0f);
+	vector3 point1, point2;
+	vector3 topPoint(0.0f, a_fHeight, 0.0f);
+
+	float innerAngle = 2 * PI / a_nSubdivisions;
+
+	for (int x = 0; x < a_nSubdivisions; x++) {
+
+		point1 = vector3(
+			a_fRadius * cos(x * innerAngle),
+			0.0f,
+			a_fRadius * sin(x * innerAngle)
+		);
+		point2 = vector3(
+			a_fRadius * cos((x + 1) * innerAngle),
+			0.0f,
+			a_fRadius * sin((x + 1) * innerAngle)
+		);
+		//bottom piece
+		AddTri(origin, point1, point2);
+		//side face
+		AddTri(point2, point1, topPoint);
+	}
 
 	// Adding information about color
 	CompleteMesh(a_v3Color);
@@ -84,9 +141,42 @@ void MyMesh::GenerateCylinder(float a_fRadius, float a_fHeight, int a_nSubdivisi
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
-	// -------------------------------
+	//Generate 
+	vector3 origin(0.0f, 0.0f, 0.0f);
+	vector3 point1, point2;
+	vector3 topPoint(0.0f, a_fHeight, 0.0f);
+
+	float innerAngle = 2 * PI / a_nSubdivisions;
+
+	for (int x = 0; x < a_nSubdivisions; x++) {
+
+		point1 = vector3(
+			a_fRadius * cos(x * innerAngle),
+			0.0f,
+			a_fRadius * sin(x * innerAngle)
+		);
+		point2 = vector3(
+			a_fRadius * cos((x + 1) * innerAngle),
+			0.0f,
+			a_fRadius * sin((x + 1) * innerAngle)
+		);
+
+
+		vector3 topPoint1(point1.x, a_fHeight, point1.z);
+		vector3 topPoint2(point2.x, a_fHeight, point2.z);
+		vector3 topOrigin(0.0f, a_fHeight, 0.0f);
+		//bottom piece
+		AddTri(origin, point1, point2);
+
+		//side face
+
+		AddQuad(topPoint1, topPoint2, point1, point2);
+
+		//top piece
+
+		AddTri(topOrigin, topPoint2, topPoint1);
+
+	}
 
 	// Adding information about color
 	CompleteMesh(a_v3Color);
@@ -114,9 +204,52 @@ void MyMesh::GenerateTube(float a_fOuterRadius, float a_fInnerRadius, float a_fH
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fOuterRadius * 2.0f, a_v3Color);
-	// -------------------------------
+	vector3 origin(0.0f, 0.0f, 0.0f);
+	vector3 outerPoint1, outerPoint2, innerPoint1, innerPoint2;
+	vector3 topPoint(0.0f, a_fHeight, 0.0f);
+
+	float innerAngle = 2 * PI / a_nSubdivisions;
+
+	for (int x = 0; x < a_nSubdivisions; x++) {
+
+		outerPoint1 = vector3(
+			a_fOuterRadius * cos(x * innerAngle),
+			0.0f,
+			a_fOuterRadius * sin(x * innerAngle)
+		);
+		outerPoint2 = vector3(
+			a_fOuterRadius * cos((x + 1) * innerAngle),
+			0.0f,
+			a_fOuterRadius * sin((x + 1) * innerAngle)
+		);
+		innerPoint1 = vector3(
+			a_fInnerRadius * cos(x * innerAngle),
+			0.0f,
+			a_fInnerRadius * sin(x * innerAngle)
+		);
+		innerPoint2 = vector3(
+			a_fInnerRadius * cos((x + 1) * innerAngle),
+			0.0f,
+			a_fInnerRadius * sin((x + 1) * innerAngle)
+		);
+
+		vector3 topOuterPoint1(outerPoint1.x, a_fHeight, outerPoint1.z);
+		vector3 topOuterPoint2(outerPoint2.x, a_fHeight, outerPoint2.z);
+		vector3 topInnerPoint1(innerPoint1.x, a_fHeight, innerPoint1.z);
+		vector3 topInnerPoint2(innerPoint2.x, a_fHeight, innerPoint2.z);
+
+		//outside face
+		AddQuad(topOuterPoint1, topOuterPoint2, outerPoint1, outerPoint2);
+
+		//inside face
+		AddQuad(topInnerPoint2, topInnerPoint1, innerPoint2, innerPoint1);
+
+		//top face
+		AddQuad(topInnerPoint1, topInnerPoint2, topOuterPoint1, topOuterPoint2);
+
+		//bottom face
+		AddQuad(innerPoint2, innerPoint1, outerPoint2, outerPoint1);
+	}
 
 	// Adding information about color
 	CompleteMesh(a_v3Color);
@@ -146,14 +279,40 @@ void MyMesh::GenerateTorus(float a_fOuterRadius, float a_fInnerRadius, int a_nSu
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fOuterRadius * 2.0f, a_v3Color);
-	// -------------------------------
+	std::vector<vector3> vert;
+
+	float radius = (a_fOuterRadius - a_fInnerRadius) / 2;
+
+	for (int i = 0; i < a_nSubdivisionsA; i++) {
+		for (int j = 0; j < a_nSubdivisionsB; j++) {
+			float a_div1 = (float)j / a_nSubdivisionsB * PI * 2.0;
+			float a_div2 = (float)i / a_nSubdivisionsA * PI * 2.0;
+			float x = (a_fInnerRadius + radius * cos(a_div2)) * cos(a_div1);
+			float y = (a_fInnerRadius + radius * cos(a_div2)) * sin(a_div1);
+			float z = radius * sin(a_div2);
+			vert.push_back(vector3(x, y, z));
+		}
+	}
+	for (int i = 0; i < a_nSubdivisionsA; i++) {
+		int i_next = (i + 1) % a_nSubdivisionsA;
+		for (int j = 0; j < a_nSubdivisionsB; j++) {
+			int l = (j + 1) % a_nSubdivisionsB;
+			int a = i * a_nSubdivisionsB + j;
+			int b = i * a_nSubdivisionsB + l;
+			int c = i_next * a_nSubdivisionsB + l;
+			int d = i_next * a_nSubdivisionsB + j;
+			AddQuad(vert[a], vert[b], vert[d], vert[c]);
+		}
+	}
 
 	// Adding information about color
 	CompleteMesh(a_v3Color);
 	CompileOpenGL3X();
 }
+
+
+
+
 void MyMesh::GenerateSphere(float a_fRadius, int a_nSubdivisions, vector3 a_v3Color)
 {
 	if (a_fRadius < 0.01f)
@@ -171,9 +330,57 @@ void MyMesh::GenerateSphere(float a_fRadius, int a_nSubdivisions, vector3 a_v3Co
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
-	// -------------------------------
+
+	float theta = (1 + sqrt(a_nSubdivisions)) / 2.0;
+	
+	float x = 1 / theta;
+	//create initial verticies
+	std::vector<vector3> vert;
+	vert.push_back(vector3(0, x, -1));
+	vert.push_back(vector3(x, 1, 0));
+	vert.push_back(vector3(-x, 1, 0));
+	vert.push_back(vector3(0, x, 1));
+	vert.push_back(vector3(0, -x, 1));
+	vert.push_back(vector3(-1, 0, x));
+	vert.push_back(vector3(0, -x, -1));
+	vert.push_back(vector3(1, 0, -x));
+	vert.push_back(vector3(1, 0, x));
+	vert.push_back(vector3(-1, 0, -x));
+	vert.push_back(vector3(x, -1, 0));
+	vert.push_back(vector3(-x, -1, 0));
+
+	//normalize all vectors and project them onto the sphere of radius a_fRadius
+	for (vector3& vec : vert) {
+		Normalize(vec);
+		vec = vec * a_fRadius;
+	}
+
+	int NumSubdivisions = 3;
+	//subdivide the triangle formed by the 3 verticies into 4 pieces and project it onto the sphere of radius a_fRadius
+	//do this 3 times
+	//3 subdivisions creates a nice smoothe sphere and loaded instantly on my laptop
+	SubdivideTriangularMeshToRadius(vert[2], vert[1], vert[0], a_fRadius, NumSubdivisions);
+	SubdivideTriangularMeshToRadius(vert[1], vert[2], vert[3], a_fRadius, NumSubdivisions);
+	SubdivideTriangularMeshToRadius(vert[5], vert[4], vert[3], a_fRadius, NumSubdivisions);
+	SubdivideTriangularMeshToRadius(vert[4], vert[8], vert[3], a_fRadius, NumSubdivisions);
+	SubdivideTriangularMeshToRadius(vert[7], vert[6], vert[0], a_fRadius, NumSubdivisions);
+	SubdivideTriangularMeshToRadius(vert[6], vert[9], vert[0], a_fRadius, NumSubdivisions);
+	SubdivideTriangularMeshToRadius(vert[11], vert[10], vert[4], a_fRadius, NumSubdivisions);
+	SubdivideTriangularMeshToRadius(vert[10], vert[11], vert[6], a_fRadius, NumSubdivisions);
+	SubdivideTriangularMeshToRadius(vert[9], vert[5], vert[2], a_fRadius, NumSubdivisions);
+	SubdivideTriangularMeshToRadius(vert[5], vert[9], vert[11], a_fRadius, NumSubdivisions);
+	SubdivideTriangularMeshToRadius(vert[8], vert[7], vert[1], a_fRadius, NumSubdivisions);
+	SubdivideTriangularMeshToRadius(vert[7], vert[8], vert[10], a_fRadius, NumSubdivisions);
+	SubdivideTriangularMeshToRadius(vert[2], vert[5], vert[3], a_fRadius, NumSubdivisions);
+	SubdivideTriangularMeshToRadius(vert[8], vert[1], vert[3], a_fRadius, NumSubdivisions);
+	SubdivideTriangularMeshToRadius(vert[9], vert[2], vert[0], a_fRadius, NumSubdivisions);
+	SubdivideTriangularMeshToRadius(vert[1], vert[7], vert[0], a_fRadius, NumSubdivisions);
+	SubdivideTriangularMeshToRadius(vert[11], vert[9], vert[6], a_fRadius, NumSubdivisions);
+	SubdivideTriangularMeshToRadius(vert[7], vert[10], vert[6], a_fRadius, NumSubdivisions);
+	SubdivideTriangularMeshToRadius(vert[5], vert[11], vert[4], a_fRadius, NumSubdivisions);
+	SubdivideTriangularMeshToRadius(vert[10], vert[8], vert[4], a_fRadius, NumSubdivisions);
+
+
 
 	// Adding information about color
 	CompleteMesh(a_v3Color);
@@ -211,6 +418,7 @@ void MyMesh::Init(void)
 	m_VAO = 0;
 	m_VBO = 0;
 
+	glCullFace(GL_BACK);
 	m_pShaderMngr = ShaderManager::GetInstance();
 }
 void MyMesh::Release(void)
@@ -325,7 +533,7 @@ void MyMesh::Render(matrix4 a_mProjection, matrix4 a_mView, matrix4 a_mModel)
 {
 	// Use the buffer and shader
 	GLuint nShader = m_pShaderMngr->GetShaderID("Basic");
-	glUseProgram(nShader); 
+	glUseProgram(nShader);
 
 	//Bind the VAO of this object
 	glBindVertexArray(m_VAO);
@@ -337,11 +545,11 @@ void MyMesh::Render(matrix4 a_mProjection, matrix4 a_mView, matrix4 a_mModel)
 	//Final Projection of the Camera
 	matrix4 m4MVP = a_mProjection * a_mView * a_mModel;
 	glUniformMatrix4fv(MVP, 1, GL_FALSE, glm::value_ptr(m4MVP));
-	
+
 	//Solid
 	glUniform3f(wire, -1.0f, -1.0f, -1.0f);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glDrawArrays(GL_TRIANGLES, 0, m_uVertexCount);  
+	glDrawArrays(GL_TRIANGLES, 0, m_uVertexCount);
 
 	//Wire
 	glUniform3f(wire, 1.0f, 0.0f, 1.0f);
