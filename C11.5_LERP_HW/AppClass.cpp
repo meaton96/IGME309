@@ -3,14 +3,14 @@ void Application::InitVariables(void)
 {
 	////Change this to your name and email
 	m_sProgrammer = "Michael Eaton - me3870@rit.edu";
-	vector3 v3Position(0.0f, 0.0f, 10.0f);
+	vector3 v3Position(0.0f, 0.0f, 30.0f);
 	vector3 v3Target = ZERO_V3;
 	vector3 v3Upward = AXIS_Y;
 	m_pCameraMngr->SetPositionTargetAndUpward(v3Position, v3Target, v3Upward);
-
 	//init the mesh
 	m_pMesh = new MyMesh();
-	m_pMesh->GenerateCone(0.5f, 1.0f, 5, C_WHITE);
+	//m_pMesh->GenerateCube(1.0f, C_WHITE);
+	m_pMesh->GenerateCube(1.0f, C_BLACK);
 }
 void Application::Update(void)
 {
@@ -37,20 +37,17 @@ void Application::Display(void)
 	// Clear the screen
 	ClearScreen();
 
-	matrix4 m4View = m_pCameraMngr->GetViewMatrix(); //view Matrix
-	matrix4 m4Projection = m_pCameraMngr->GetProjectionMatrix(); //Projection Matrix
+	matrix4 m4View = m_pCameraMngr->GetViewMatrix();
+	matrix4 m4Projection = m_pCameraMngr->GetProjectionMatrix();
+
+
+	static float timer = 0;
+	static uint clock = m_pSystem->GenClock();
+	timer += m_pSystem->GetDeltaTime(clock); 
 
 	
-
-	//Sol2
-	//Get a timer
-	static float fTimer = 0;	//store the new timer
-	static uint uClock = m_pSystem->GenClock(); //generate a new clock for that timer
-	fTimer += m_pSystem->GetDeltaTime(uClock); //get the delta time for that timer
-
-	//Calculate list of Stops
 	static std::vector<vector3> stops;
-	static bool bInit = false; //Initialize once
+	static bool bInit = false;
 	if (!bInit)
 	{
 		stops.push_back(vector3(-4.0f, -2.0f, 5.0f));
@@ -66,38 +63,34 @@ void Application::Display(void)
 		stops.push_back(vector3(1.0f, 3.0f, -5.0f));
 		bInit = true;
 	}
-
-	vector3 v3Start; //start point
-	vector3 v3End; //end point
-	static uint route = 0; //current route
-	v3Start = stops[route]; //start at the current route
-	v3End = stops[(route + 1) % stops.size()]; //end at route +1 (if overboard will restart from 0)
-
-	//get the percentace
-	float fTimeBetweenStops = 2.0;//in seconds
-	//map the value to be between 0.0 and 1.0
-	float fPercentage = MapValue(fTimer, 0.0f, fTimeBetweenStops, 0.0f, 1.0f);
-
-	//calculate the current position
-	vector3 v3CurrentPos = glm::lerp(v3Start, v3End, fPercentage);
-	matrix4 m4Model = glm::translate(IDENTITY_M4, v3CurrentPos);
-
-	//if we are done with this route
-	if (fPercentage >= 1.0f)
-	{
-		route++; //go to the next route
-		fTimer = m_pSystem->GetDeltaTime(uClock);//restart the clock
-		route %= stops.size();//make sure we are within boundries
-	}
-
-	// render the object
-	m_pMesh->Render(m4Projection, m4View, m4Model);
-
-	// draw stops to know we are within stops
 	for (uint i = 0; i < stops.size(); ++i)
 	{
 		m_pModelMngr->AddSphereToRenderList(glm::translate(stops[i]) * glm::scale(vector3(0.15f)), C_RED, RENDER_WIRE);
 	}
+
+	vector3 v3Start;
+	vector3 v3End;
+	static uint route = 0; 
+	v3Start = stops[route]; 
+	v3End = stops[(route + 1) % stops.size()]; 
+
+	float fTimeBetweenStops = 2.0;
+	float fPercentage = MapValue(timer, 0.0f, fTimeBetweenStops, 0.0f, 1.0f);
+
+	vector3 v3CurrentPos = glm::lerp(v3Start, v3End, fPercentage);
+	matrix4 m4Model = glm::translate(IDENTITY_M4, v3CurrentPos);
+
+	if (fPercentage >= 1.0f)
+	{
+		route++;
+		timer = m_pSystem->GetDeltaTime(clock);
+		route %= stops.size();
+	}
+
+	m_pMesh->Render(m4Projection, m4View, m4Model);
+
+	
+
 
 	// draw a skybox
 	m_pModelMngr->AddSkyboxToRenderList();
@@ -116,9 +109,7 @@ void Application::Display(void)
 }
 void Application::Release(void)
 {
-	//release the mesh
 	SafeDelete(m_pMesh);
-
 	//release GUI
 	ShutdownGUI();
 }
