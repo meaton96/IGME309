@@ -22,6 +22,8 @@ class Application
 	quaternion m_qOrientation;
 	vector3 m_v3Rotation;
 	String m_sSteve = "Minecraft\\Steve.obj";
+	quaternion modelOrientation;
+
 private:
 	String m_sProgrammer = "Alberto Bobadilla - labigm@rit.edu";
 	static ImGuiObject gui; //GUI object

@@ -2,7 +2,7 @@
 void Application::InitVariables(void)
 {
 	////Change this to your name and email
-	m_sProgrammer = "Alberto Bobadilla - labigm@rit.edu";
+	m_sProgrammer = "Michael Eaton - me3870@rit.edu";
 	vector3 v3Position(0.0f, 0.0f, 10.0f);
 	vector3 v3Target = ZERO_V3;
 	vector3 v3Upward = AXIS_Y;
@@ -38,6 +38,10 @@ void Application::Update(void)
 	static uint uClock = m_pSystem->GenClock();
 	float fTimer = m_pSystem->GetTimeSinceStart(uClock);
 	float fDeltaTime = m_pSystem->GetDeltaTime(uClock);
+	//m_m4Steve = glm::toMat4(m_qArcBall);
+	//quaternion q3 = glm::angleAxis(glm::radians(fTimer * 5), vector3(1.0f, 1.0f, 1.0f));
+
+//	m_m4Steve = glm::toMat4(q3);
 
 #pragma region SLERP
 	if (false)
@@ -50,18 +54,18 @@ void Application::Update(void)
 	}
 #pragma endregion
 #pragma region translate vector orientation into a matrix
-	if (false)
+	if (true)
 	{
-		matrix4 m4OrientX = glm::rotate(IDENTITY_M4, glm::radians(m_v3Orientation.x), vector3(1.0f, 0.0f, 0.0f));
-		matrix4 m4OrientY = glm::rotate(IDENTITY_M4, glm::radians(m_v3Orientation.y), vector3(0.0f, 1.0f, 0.0f));
-		matrix4 m4OrientZ = glm::rotate(IDENTITY_M4, glm::radians(m_v3Orientation.z), vector3(0.0f, 0.0f, 1.0f));
+		matrix4 m4OrientX = glm::rotate(IDENTITY_M4, glm::radians(modelOrientation.x), vector3(1.0f, 0.0f, 0.0f));
+		matrix4 m4OrientY = glm::rotate(IDENTITY_M4, glm::radians(modelOrientation.y), vector3(0.0f, 1.0f, 0.0f));
+		matrix4 m4OrientZ = glm::rotate(IDENTITY_M4, glm::radians(modelOrientation.z), vector3(0.0f, 0.0f, 1.0f));
 
 		matrix4 m4Orientation = m4OrientX * m4OrientY * m4OrientZ;
 		m_m4Steve = glm::toMat4(m_qOrientation);
 	}
 #pragma endregion
 #pragma region orientation using quaternions
-	if (true)
+	if (false)
 	{
 		m_m4Steve = glm::toMat4(m_qOrientation);
 	}

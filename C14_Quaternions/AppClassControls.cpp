@@ -65,7 +65,7 @@ void Application::ProcessKeyReleased(sf::Event a_event)
 		m_bModifier = false;
 		break;
 	case sf::Keyboard::R:
-		m_v3Orientation = vector3(0.0f);
+		modelOrientation = vector3(0.0f);
 		m_qOrientation = quaternion();
 		break;
 	}
@@ -113,7 +113,7 @@ void Application::ProcessKeyboard(void)
 #pragma region Character Orientation
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))
 	{
-		m_v3Orientation.x++;
+		modelOrientation.x++;
 		quaternion q1 = glm::angleAxis(glm::radians(1.0f), vector3(1.0f, 0.0f, 0.0f));
 		m_qOrientation = m_qOrientation * q1;
 		//example on how even a quaternion if generated though Euler will have Gimbal Lock
@@ -124,7 +124,7 @@ void Application::ProcessKeyboard(void)
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Y))
 	{
-		m_v3Orientation.y++;
+		modelOrientation.y++;
 		quaternion q1 = glm::angleAxis(glm::radians(1.0f), vector3(0.0f, 1.0f, 0.0f));
 		m_qOrientation = m_qOrientation * q1;
 		//example on how even a quaternion if generated though Euler will have Gimbal Lock
@@ -134,7 +134,7 @@ void Application::ProcessKeyboard(void)
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
 	{
-		m_v3Orientation.z++;
+		modelOrientation.z++;
 		quaternion q1 = glm::angleAxis(glm::radians(1.0f), vector3(0.0f, 0.0f, 1.0f));
 		m_qOrientation = m_qOrientation * q1;
 		//example on how even a quaternion if generated though Euler will have Gimbal Lock
@@ -263,6 +263,7 @@ void Application::ArcBall(float a_fSensitivity)
 	{
 		DeltaMouse = static_cast<float>(MouseY - CenterY);
 		m_qArcBall = quaternion(vector3(glm::radians(a_fSensitivity * DeltaMouse), 0.0f, 0.0f)) * m_qArcBall;
+		//m_qArcBall = glm::angleAxis(glm::radians(a_fSensitivity * DeltaMouse), vector3(1.0f)) * m_qArcBall;
 	}
 
 	SetCursorPos(CenterX, CenterY);//Position the mouse in the center

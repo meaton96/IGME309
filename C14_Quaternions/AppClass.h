@@ -20,7 +20,7 @@ using namespace BTX;
 
 class Application
 {
-	vector3 m_v3Orientation; //orientation for the Model in vectors
+	vector3 modelOrientation; //orientation for the Model in vectors
 	Model* m_pModel = nullptr; //Model to display
 	matrix4 m_m4Steve; //Model to world matrix for Steve
 	quaternion m_qOrientation; //orientation for the Model in quaternions
