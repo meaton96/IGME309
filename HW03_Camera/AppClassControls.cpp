@@ -97,6 +97,9 @@ void Application::ProcessKeyboard(void)
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
 		m_pCamera->MoveVertical(fSpeed);
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) {
+		m_pCamera->ResetCamera();
+	}
 #pragma endregion
 }
 //Mouse

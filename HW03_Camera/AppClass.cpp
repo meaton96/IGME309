@@ -2,9 +2,9 @@
 void Application::InitVariables(void)
 {
 	////Change this to your name and email
-	m_sProgrammer = "Alberto Bobadilla - labigm@rit.edu";
+	m_sProgrammer = "Michael Eaton - me3870@rit.edu";
 	vector3 v3Position(0.0f, 15.0f, 25.0f);
-	vector3 v3Target = ZERO_V3;
+	vector3 v3Target(0.0f, 0.0f, 0.0f);
 	vector3 v3Upward = AXIS_Y;
 	m_pCamera = new MyCamera();
 	m_pCamera->SetPositionTargetAndUpward(v3Position, v3Target, v3Upward);

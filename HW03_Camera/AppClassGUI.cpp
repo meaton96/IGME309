@@ -28,6 +28,7 @@ void Application::DrawGUI(void)
 			ImGui::Text("         WASD: Movement");
 			ImGui::Text("        Shift: Speed Modifier");
 			ImGui::Text("	         P: Screenshot");
+			ImGui::Text("	         R: Reset Camera");
 		}
 		ImGui::End();
 	}

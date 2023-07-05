@@ -3,44 +3,54 @@ using namespace BTX;
 //  MyCamera
 void MyCamera::SetPositionTargetAndUpward(vector3 a_v3Position, vector3 a_v3Target, vector3 a_v3Upward)
 {
-	//TODO:: replace the super call with your functionality
-	//Tip: Changing any positional vector forces you to calculate new directional ones
-	super::SetPositionTargetAndUpward(a_v3Position, a_v3Target, a_v3Upward);
 
-	//After changing any vectors you need to recalculate the MyCamera View matrix.
-	//While this is executed within the parent call above, when you remove that line
-	//you will still need to call it at the end of this method
+	m_v3Position = a_v3Position;
+	m_v3Target = a_v3Target;
+	m_v3Upward = a_v3Upward;
+
+	//store original rotation in case its not (0,0,0)
+	m_qOrientation = glm::angleAxis(m_v3PitchYawRoll.x, glm::vec3(1, 0, 0)) *
+		glm::angleAxis(m_v3PitchYawRoll.y, glm::vec3(0, 1, 0));
+
 	CalculateView();
 }
+//move in the desired direction by a_fDistance
+//recalculate vectors after moving
 void MyCamera::MoveForward(float a_fDistance)
 {
-	//Tips:: Moving will modify both positional and directional vectors,
-	//		 here we only modify the positional.
-	//       The code below "works" because we wrongly assume the forward 
-	//		 vector is going in the global -Z but if you look at the demo 
-	//		 in the _Binary folder you will notice that we are moving 
-	//		 backwards and we never get closer to the plane as we should 
-	//		 because as we are looking directly at it.
-	m_v3Position += vector3(0.0f, 0.0f, a_fDistance);
-	m_v3Target += vector3(0.0f, 0.0f, a_fDistance);
+	
+	auto temp = GetForward();
+	m_v3Position += temp * a_fDistance;
+	m_v3Target += temp * a_fDistance;
+	CalculateView();
 }
 void MyCamera::MoveVertical(float a_fDistance)
 {
-	//Tip:: Look at MoveForward
+	auto temp = GetUpward();
+	m_v3Position += temp * a_fDistance;
+	m_v3Target += temp * a_fDistance;
+	CalculateView();
 }
 void MyCamera::MoveSideways(float a_fDistance)
 {
-	//Tip:: Look at MoveForward
+	auto temp = GetRightward();
+	m_v3Position += temp * a_fDistance;
+	m_v3Target += temp * a_fDistance;
+	CalculateView();
 }
 void MyCamera::CalculateView(void)
 {
-	//Tips:: Directional vectors will be affected by the orientation in the quaternion
-	//		 After calculating any new vector one needs to update the View Matrix
-	//		 Camera rotation should be calculated out of the m_v3PitchYawRoll member
-	//		 it will receive information from the main code on how much these orientations
-	//		 have change so you only need to focus on the directional and positional 
-	//		 vectors. There is no need to calculate any right click process or connections.
-	m_m4View = glm::lookAt(m_v3Position, m_v3Target, m_v3Upward);
+	//get total rotation
+	auto orientation = glm::angleAxis(m_v3PitchYawRoll.x, glm::vec3(1, 0, 0)) *
+		glm::angleAxis(m_v3PitchYawRoll.y, glm::vec3(0, 1, 0)) * m_qOrientation;
+
+	//rotate forward and right vectors by the orientation
+	m_v3Forward = glm::rotate(glm::inverse(orientation), glm::vec3(0, 0, -1));
+	m_v3Rightward = glm::rotate(glm::inverse(orientation), glm::vec3(1, 0, 0));
+
+	//calculate look at and right vectors
+	m_m4View = glm::lookAt(m_v3Position, m_v3Forward + m_v3Position, m_v3Upward);
+
 }
 //You can assume that the code below does not need changes unless you expand the functionality
 //of the class or create helper methods, etc.
@@ -52,8 +62,8 @@ void MyCamera::Init(vector3 a_v3Position, vector3 a_v3Target, vector3 a_v3Upward
 	m_v2NearFar = vector2(0.001f, 1000.0f);
 	m_v3PitchYawRoll = vector3(0.0f);
 	SystemSingleton* pSystem = SystemSingleton::GetInstance();
-	vector2 v3WidthHeigh(	static_cast<float>(pSystem->GetWindowWidth()),
-							static_cast<float>(pSystem->GetWindowHeight()));
+	vector2 v3WidthHeigh(static_cast<float>(pSystem->GetWindowWidth()),
+		static_cast<float>(pSystem->GetWindowHeight()));
 	SetWidthAndHeightOfDisplay(v3WidthHeigh);
 
 	return SetPositionTargetAndUpward(a_v3Position, a_v3Target, a_v3Upward);
@@ -81,7 +91,7 @@ void MyCamera::Swap(MyCamera& other)
 	std::swap(m_m4Projection, other.m_m4Projection);
 	std::swap(m_m4View, other.m_m4View);
 }
-void MyCamera::Release(void){}
+void MyCamera::Release(void) {}
 //The big 3
 MyCamera::MyCamera()
 {
@@ -125,22 +135,22 @@ MyCamera& MyCamera::operator=(MyCamera const& other)
 	}
 	return *this;
 }
-MyCamera::~MyCamera(){ Release(); };
+MyCamera::~MyCamera() { Release(); };
 //Accessors
-vector3 MyCamera::GetPosition(void){ return m_v3Position; }
+vector3 MyCamera::GetPosition(void) { return m_v3Position; }
 vector3 MyCamera::GetForward(void) { return m_v3Forward; }
 vector3 MyCamera::GetUpward(void) { return m_v3Upward; }
 vector3 MyCamera::GetRightward(void) { return m_v3Rightward; }
 void MyCamera::SetForward(vector3 a_v3Input) { m_v3Forward = a_v3Input; }
 void MyCamera::SetUpward(vector3 a_v3Input) { m_v3Upward = a_v3Input; }
 void MyCamera::SetRightward(vector3 a_v3Input) { m_v3Rightward = a_v3Input; }
-matrix4 MyCamera::GetViewMatrix(void){ CalculateView(); return m_m4View; }
-matrix4 MyCamera::GetProjectionMatrix(void){ CalculateProjection(); return m_m4Projection; }
-void MyCamera::SetNearFarPlanes(float a_fNear, float a_fFar){ m_v2NearFar = vector2(a_fNear, a_fFar); }
-void MyCamera::SetFOV(float a_fFOV){ m_fFOV = a_fFOV; }
-void MyCamera::SetFPS(bool a_bFPS){ m_bFPS = a_bFPS; }
-void MyCamera::SetCameraMode(BTXs::eCAMERAMODE a_nMode){ /*Removed to simplify assignment*/ }
-BTXs::eCAMERAMODE MyCamera::GetCameraMode(void){ return m_nMode; }
+matrix4 MyCamera::GetViewMatrix(void) { CalculateView(); return m_m4View; }
+matrix4 MyCamera::GetProjectionMatrix(void) { CalculateProjection(); return m_m4Projection; }
+void MyCamera::SetNearFarPlanes(float a_fNear, float a_fFar) { m_v2NearFar = vector2(a_fNear, a_fFar); }
+void MyCamera::SetFOV(float a_fFOV) { m_fFOV = a_fFOV; }
+void MyCamera::SetFPS(bool a_bFPS) { m_bFPS = a_bFPS; }
+void MyCamera::SetCameraMode(BTXs::eCAMERAMODE a_nMode) { /*Removed to simplify assignment*/ }
+BTXs::eCAMERAMODE MyCamera::GetCameraMode(void) { return m_nMode; }
 void MyCamera::SetPosition(vector3 a_v3Position)
 {
 	return SetPositionTargetAndUpward(a_v3Position, m_v3Target, m_v3Upward);
@@ -165,8 +175,8 @@ matrix4 MyCamera::GetVP(void)
 void MyCamera::CalculateProjection(void)
 {
 	SystemSingleton* pSystem = SystemSingleton::GetInstance();
-	vector2 v3WidthHeigh(	static_cast<float>(pSystem->GetWindowWidth()),
-							static_cast<float>(pSystem->GetWindowHeight()));
+	vector2 v3WidthHeigh(static_cast<float>(pSystem->GetWindowWidth()),
+		static_cast<float>(pSystem->GetWindowHeight()));
 	SetWidthAndHeightOfDisplay(v3WidthHeigh);
 	float fRatio = v3WidthHeigh.x / v3WidthHeigh.y;
 	m_m4Projection = glm::perspective(m_fFOV, fRatio, m_v2NearFar.x, m_v2NearFar.y);
@@ -174,15 +184,23 @@ void MyCamera::CalculateProjection(void)
 
 void MyCamera::ChangePitch(float a_fDegree)
 {
-	m_v3PitchYawRoll.x += a_fDegree;
+
+	m_v3PitchYawRoll.x -= a_fDegree;
+	//clamp yaw between -89 and 89 degrees
+	if (m_v3PitchYawRoll.x > 1.55) { m_v3PitchYawRoll.x = 1.55; }
+	else if (m_v3PitchYawRoll.x < -1.55) { m_v3PitchYawRoll.x = -1.55; }
+
+	CalculateView();
 }
 void MyCamera::ChangeYaw(float a_fDegree)
 {
-	m_v3PitchYawRoll.y += a_fDegree;
+	m_v3PitchYawRoll.y -= a_fDegree;
+	CalculateView();
 }
 void MyCamera::ChangeRoll(float a_fDegree)
 {
-	m_v3PitchYawRoll.z += a_fDegree;
+	m_v3PitchYawRoll.z -= a_fDegree;
+	CalculateView();
 }
 
 void MyCamera::ResetCamera(void)
