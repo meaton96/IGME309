@@ -39,6 +39,14 @@ class MyRigidBody
 	matrix4 m_m4ToWorld = IDENTITY_M4; //Matrix that will take us from local to world coordinate
 
 	std::set<MyRigidBody*> m_CollidingRBSet; //set of rigid bodies this one is colliding with
+	
+	struct OBB {
+		vector3 center;
+		vector3 localAxes[3];
+		vector3 halfWidth;
+	};
+
+	OBB m_OBB;
 
 public:
 	/*
@@ -248,6 +256,10 @@ private:
 	OUTPUT: 0 for colliding, all other first axis that succeeds test
 	*/
 	uint SAT(MyRigidBody* const a_pOther);
+
+	//returns a vector of vector3s in the form of
+	//world posision, AxisX, AxisY, AxisZ, half_width
+	OBB& GetUpdatedOBB();
 };//class
 
 } //namespace BTX
