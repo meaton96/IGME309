@@ -15,6 +15,8 @@ namespace BTX
 //System Class
 class MyRigidBody
 {
+	
+
 	ModelManager* m_pModelMngr = nullptr; //for displaying the Rigid Body
 
 	bool m_bVisibleBS = false; //Visibility of bounding sphere
@@ -40,13 +42,12 @@ class MyRigidBody
 
 	std::set<MyRigidBody*> m_CollidingRBSet; //set of rigid bodies this one is colliding with
 	
-	struct OBB {
-		vector3 center;
-		vector3 localAxes[3];
-		vector3 halfWidth;
-	};
+	
 
-	OBB m_OBB;
+	
+
+	
+	
 
 public:
 	/*
@@ -235,6 +236,7 @@ public:
 	Output: ---
 	*/
 	void SetModelMatrix(matrix4 a_m4ModelMatrix);
+
 #pragma endregion
 	
 private:
@@ -255,11 +257,42 @@ private:
 	ARGUMENTS: MyRigidBody* const a_pOther -> other rigid body to test against
 	OUTPUT: 0 for colliding, all other first axis that succeeds test
 	*/
-	uint SAT(MyRigidBody* const a_pOther);
+	uint SAT(MyRigidBody* p_Other);
+	/*
+	USAGE: Calculate all 15 projection axes for the SAT
+	ARGUMENTS: MyRigidBody* const a_pOther -> other rigid body to test against
+	OUTPUT: a std::vector of vector3s representing the 15 projection axes
+	*/
+	std::vector<vector3> CalculateProjectionAxes(MyRigidBody* p_Other);
+	/*
+	USAGE: Project the rigidbody's oriented bounding box onto the vector3 axis
+	ARGUMENTS: MyRigidBody* p_OBB -> rigid body to project, vector3 axis to project on to, 
+	reference float min value of projection, refrence float max value of projection
+	OUTPUT: will change the reference min and max to the min amd max values from projecting the 8 verticies onto the axis
+	*/
+	void ProjectOBB(MyRigidBody* p_OBB, const vector3& axis, float& min, float& max);
+	/*
+	USAGE: Calculate the 8 vertices of the Orientated Bounding Box
+	ARGUMENTS: --
+	OUTPUT: a std::vector of vector3s, the 8 vertices of the Orientated Bounding Box
+	*/
+	std::vector<vector3> GetOBBVertices();
+	/*
+	USAGE: Gets the local axis index of separation from the axis SAT result
+	ARGUMENTS: the axis of separation
+	OUTPUT: an integer representation of which local axis is sperating two objects
+	x = 1
+	y = 2
+	z = 3
+	*/
+	uint GetAxisIndex(const vector3& axis);
+	/*
+	USAGE: Draws a plane along the axis of separation between this object and a_pOther
+	ARGUMENTS: the uint axis index, see above, const a_pOther -> the other rigid body that this object is not colliding with
+	OUTPUT: --
+	*/
+	void DrawSeperationPlane(uint axisIndex, MyRigidBody* const a_pOther);
 
-	//returns a vector of vector3s in the form of
-	//world posision, AxisX, AxisY, AxisZ, half_width
-	OBB& GetUpdatedOBB();
 };//class
 
 } //namespace BTX

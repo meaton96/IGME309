@@ -1,118 +1,166 @@
 #include "MyRigidBody.h"
 using namespace BTX;
 //Allocation
-uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
-{
-	//TODO: Calculate the SAT algorithm I STRONGLY suggest you use the
-	//Real Time Collision detection algorithm for OBB here but feel free to
-	//implement your own solution.
-	//return 0;
 
-	float ra, rb;
-	matrix3 R, AbsR;
-	OBB OBB_A = GetUpdatedOBB();
-	OBB OBB_B = a_pOther->GetUpdatedOBB();
+uint BTX::MyRigidBody::SAT(MyRigidBody* p_Other) {
+	//get projection axes
+	std::vector<vector3> axes = CalculateProjectionAxes(p_Other);
 
-	//std::cout << a.c.x << ", " << a.c.y << ", " << a.c.z << std::endl;
-	//std::cout << GetCenterGlobal().x << ", " << GetCenterGlobal().y << ", " << GetCenterGlobal().z << std::endl;
-	//std::cout << OBB_A.localAxes[0].x << ", " << OBB_A.localAxes[0].y << ", " << OBB_A.localAxes[0].z << std::endl;
-	//std::cout << OBB_B.localAxes[1].x << ", " << OBB_B.localAxes[1].y << ", " << OBB_B.localAxes[1].z << std::endl;
-	//std::cout << a.u[2].x << ", " << a.u[2].y << ", " << a.u[2].z << std::endl;
+	for (const auto& axis : axes) {
+		float min1, max1, min2, max2;
+		//project each OBB onto each axis
+		//store the overall min and max for each object
+		ProjectOBB(this, axis, min1, max1);
+		ProjectOBB(p_Other, axis, min2, max2);
+		//std::cout << "(" << axis[0] << ", " << axis[1] << ", " << axis[2] << ")" << std::endl;
+		if (max1 < min2 || max2 < min1) {
 
-
-	// Compute rotation matrix expressing b in a’s coordinate frame
-	for (int i = 0; i < 3; i++)
-		for (int j = 0; j < 3; j++)
-			R[i][j] = glm::dot(OBB_A.localAxes[i], OBB_B.localAxes[j]);
-
-	// Compute translation vector t
-	vector3 v_ABtranslation = OBB_B.center - OBB_A.center;
-	// Bring translation into a’s coordinate frame
-	v_ABtranslation = vector3(glm::dot(v_ABtranslation, OBB_A.localAxes[0]), glm::dot(v_ABtranslation, OBB_A.localAxes[1]), glm::dot(v_ABtranslation, OBB_A.localAxes[2]));
-
-	// Compute common subexpressions. Add in an epsilon term to
-	// counteract arithmetic errors when two edges are parallel and
-	// their cross product is (near) null (see text for details)
-	for (int i = 0; i < 3; i++)
-		for (int j = 0; j < 3; j++)
-			AbsR[i][j] = fabs(R[i][j]) + .001f;
-
-	// Test axes L = A0, L = A1, L = A2
-	for (int i = 0; i < 3; i++) {
-		ra = OBB_A.halfWidth[i];
-		rb = OBB_B.halfWidth[0] * AbsR[i][0] + OBB_B.halfWidth[1] * AbsR[i][1] + OBB_B.halfWidth[2] * AbsR[i][2];
-		if (fabs(v_ABtranslation[i]) > ra + rb) return 1;
+			return GetAxisIndex(axis);
+		}
 	}
 
-	// Test axes L = B0, L = B1, L = B2
-	for (int i = 0; i < 3; i++) {
-		ra = OBB_A.halfWidth[0] * AbsR[0][i] + OBB_A.halfWidth[1] * AbsR[1][i] + OBB_A.halfWidth[2] * AbsR[2][i];
-		rb = OBB_B.halfWidth[i];
-		if (fabs(v_ABtranslation[0] * R[0][i] + v_ABtranslation[1] * R[1][i] + v_ABtranslation[2] * R[2][i]) > ra + rb) 
-			return 2;
+	return BTXs::SAT_NONE;
+}
+std::vector<vector3> BTX::MyRigidBody::CalculateProjectionAxes(MyRigidBody* p_Other) {
+
+	std::vector<vector3> axes;
+
+	//get the local axes of each rigid body
+	auto localX = vector3(m_m4ToWorld * vector4(1.0f, 0.0f, 0.0f, 0.0f));
+	auto localY = vector3(m_m4ToWorld * vector4(0.0f, 1.0f, 0.0f, 0.0f));
+	auto localZ = vector3(m_m4ToWorld * vector4(0.0f, 0.0f, 1.0f, 0.0f));
+
+	auto o_localX = vector3(p_Other->m_m4ToWorld * vector4(1.0f, 0.0f, 0.0f, 0.0f));
+	auto o_localY = vector3(p_Other->m_m4ToWorld * vector4(0.0f, 1.0f, 0.0f, 0.0f));
+	auto o_localZ = vector3(p_Other->m_m4ToWorld * vector4(0.0f, 0.0f, 1.0f, 0.0f));
+
+
+	// Add axes based on the orientation of each OBB
+	axes.push_back(localX);
+	axes.push_back(localY);
+	axes.push_back(localZ);
+
+	axes.push_back(o_localX);
+	axes.push_back(o_localY);
+	axes.push_back(o_localZ);
+
+	// Add cross products of the orientation axes
+	axes.push_back(glm::cross(localX, o_localX));
+	axes.push_back(glm::cross(localX, o_localY));
+	axes.push_back(glm::cross(localX, o_localZ));
+	axes.push_back(glm::cross(localY, o_localX));
+	axes.push_back(glm::cross(localY, o_localY));
+	axes.push_back(glm::cross(localY, o_localZ));
+	axes.push_back(glm::cross(localZ, o_localX));
+	axes.push_back(glm::cross(localZ, o_localY));
+	axes.push_back(glm::cross(localZ, o_localZ));
+
+	// Normalize the axes
+	for (auto& axis : axes) {
+		axis = glm::normalize(axis);
 	}
 
-	// Test axis L = A0 x B0
-	ra = OBB_A.halfWidth[1] * AbsR[2][0] + OBB_A.halfWidth[2] * AbsR[1][0];
-	rb = OBB_B.halfWidth[1] * AbsR[0][2] + OBB_B.halfWidth[2] * AbsR[0][1];
-	if (fabs(v_ABtranslation[2] * R[1][0] - v_ABtranslation[1] * R[2][0]) > ra + rb) return 3;
-
-	// Test axis L = A0 x B1
-	ra = OBB_A.halfWidth[1] * AbsR[2][1] + OBB_A.halfWidth[2] * AbsR[1][1];
-	rb = OBB_B.halfWidth[0] * AbsR[0][2] + OBB_B.halfWidth[2] * AbsR[0][0];
-	if (fabs(v_ABtranslation[2] * R[1][1] - v_ABtranslation[1] * R[2][1]) > ra + rb) return 4;
-
-	// Test axis L = A0 x B2
-	ra = OBB_A.halfWidth[1] * AbsR[2][2] + OBB_A.halfWidth[2] * AbsR[1][2];
-	rb = OBB_B.halfWidth[0] * AbsR[0][1] + OBB_B.halfWidth[1] * AbsR[0][0];
-	if (fabs(v_ABtranslation[2] * R[1][2] - v_ABtranslation[1] * R[2][2]) > ra + rb) return 5;
-
-	// Test axis L = A1 x B0
-	ra = OBB_A.halfWidth[0] * AbsR[2][0] + OBB_A.halfWidth[2] * AbsR[0][0];
-	rb = OBB_B.halfWidth[1] * AbsR[1][2] + OBB_B.halfWidth[2] * AbsR[1][1];
-	if (fabs(v_ABtranslation[0] * R[2][0] - v_ABtranslation[2] * R[0][0]) > ra + rb) return 6;
-
-	// Test axis L = A1 x B1
-	ra = OBB_A.halfWidth[0] * AbsR[2][1] + OBB_A.halfWidth[2] * AbsR[0][1];
-	rb = OBB_B.halfWidth[0] * AbsR[1][2] + OBB_B.halfWidth[2] * AbsR[1][0];
-	if (fabs(v_ABtranslation[0] * R[2][1] - v_ABtranslation[2] * R[0][1]) > ra + rb) return 7;
-
-	// Test axis L = A1 x B2
-	ra = OBB_A.halfWidth[0] * AbsR[2][2] + OBB_A.halfWidth[2] * AbsR[0][2];
-	rb = OBB_B.halfWidth[0] * AbsR[1][1] + OBB_B.halfWidth[1] * AbsR[1][0];
-	if (fabs(v_ABtranslation[0] * R[2][2] - v_ABtranslation[2] * R[0][2]) > ra + rb) return 8;
-
-	// Test axis L = A2 x B0
-	ra = OBB_A.halfWidth[0] * AbsR[1][0] + OBB_A.halfWidth[1] * AbsR[0][0];
-	rb = OBB_B.halfWidth[1] * AbsR[2][2] + OBB_B.halfWidth[2] * AbsR[2][1];
-	if (fabs(v_ABtranslation[1] * R[0][0] - v_ABtranslation[0] * R[1][0]) > ra + rb) return 9;
-
-	// Test axis L = A2 x B1
-	ra = OBB_A.halfWidth[0] * AbsR[1][1] + OBB_A.halfWidth[1] * AbsR[0][1];
-	rb = OBB_B.halfWidth[0] * AbsR[2][2] + OBB_B.halfWidth[2] * AbsR[2][0];
-	if (fabs(v_ABtranslation[1] * R[0][1] - v_ABtranslation[0] * R[1][1]) > ra + rb) return 10;
-
-	// Test axis L = A2 x B2
-	ra = OBB_A.halfWidth[0] * AbsR[1][2] + OBB_A.halfWidth[1] * AbsR[0][2];
-	rb = OBB_B.halfWidth[0] * AbsR[2][1] + OBB_B.halfWidth[1] * AbsR[2][0];
-	if (fabs(v_ABtranslation[1] * R[0][2] - v_ABtranslation[0] * R[1][2]) > ra + rb) return 11;
-
-	// Since no separating axis is found, the OBBs must be intersecting
-
-
-	return BTXs::eSATResults::SAT_NONE;
+	return axes;
 }
-BTX::MyRigidBody::OBB& BTX::MyRigidBody::GetUpdatedOBB()
+void BTX::MyRigidBody::ProjectOBB(MyRigidBody* p_OBB, const vector3& axis, float& min, float& max) {
+	std::vector<vector3> corners = p_OBB->GetOBBVertices(); //get OBB vertices
+
+	min = max = glm::dot(corners[0], axis);
+
+	//iterate vertices and project them onto the axis using dot product
+	//store the min and max values
+	for (size_t i = 1; i < corners.size(); ++i) {
+		float projection = glm::dot(corners[i], axis);
+		if (projection < min) {
+			min = projection;
+		}
+		else if (projection > max) {
+			max = projection;
+		}
+	}
+
+	//not working 
+	/*auto v3MinL = vector3(p_OBB->m_m4ToWorld * vector4(p_OBB->m_v3MinL, 1.0f));
+	auto v3MaxL = vector3(p_OBB->m_m4ToWorld * vector4(p_OBB->m_v3MaxL, 1.0f));
+
+	//std::cout << "(" << v3MinL[0] << ", " << v3MinL[1] << ", " << v3MinL[2] << ")" << std::endl;
+
+	min = glm::dot(v3MinL, axis);
+	max = glm::dot(v3MaxL, axis);*/
+
+}
+std::vector<vector3> BTX::MyRigidBody::GetOBBVertices() {
+	std::vector<vector3> vertices(8);
+
+	vector3 axisX = vector3(m_m4ToWorld * vector4(1.0f, 0.0f, 0.0f, 0.0f)) * m_v3HalfWidth.x;
+	vector3 axisY = vector3(m_m4ToWorld * vector4(0.0f, 1.0f, 0.0f, 0.0f)) * m_v3HalfWidth.y;
+	vector3 axisZ = vector3(m_m4ToWorld * vector4(0.0f, 0.0f, 1.0f, 0.0f)) * m_v3HalfWidth.z;
+
+	vector3 center = GetCenterGlobal();
+
+	vertices[0] = center - axisX - axisY - axisZ;
+	vertices[1] = center + axisX - axisY - axisZ;
+	vertices[2] = center + axisX + axisY - axisZ;
+	vertices[3] = center - axisX + axisY - axisZ;
+	vertices[4] = center - axisX - axisY + axisZ;
+	vertices[5] = center + axisX - axisY + axisZ;
+	vertices[6] = center + axisX + axisY + axisZ;
+	vertices[7] = center - axisX + axisY + axisZ;
+
+	return vertices;
+}
+uint BTX::MyRigidBody::GetAxisIndex(const vector3& axis)
 {
-	OBB obb = m_OBB;
-	obb.center = GetCenterGlobal();
-	obb.localAxes[0] = vector3(m_m4ToWorld * vector4(m_OBB.localAxes[0], 1.0f));
-	obb.localAxes[1] = vector3(m_m4ToWorld * vector4(m_OBB.localAxes[1], 1.0f));
-	obb.localAxes[2] = vector3(m_m4ToWorld * vector4(m_OBB.localAxes[2], 1.0f));
 
+	if (axis == AXIS_X)
+		return BTXs::SAT_AX;
+	if (axis == AXIS_Y)
+		return BTXs::SAT_AY;
+	if (axis == AXIS_Z)
+		return BTXs::SAT_AZ;
 
-	return obb;
+	//returns the axis with the highest absoulte value
+	//this seems to work about 90% of the time
+	//weird behaviour around z/x axes getting swapped 
+	float max = fabs(axis[0]);
+	int maxIndex = 1;
+	for (int i = 2; i <= 3; i++) {
+		if (fabs(axis[i - 1]) > max) {
+			max = axis[i - 1];
+			maxIndex = i;
+		}
+	}
+	return maxIndex;
 }
+void BTX::MyRigidBody::DrawSeperationPlane(uint axisIndex, MyRigidBody* const a_pOther)
+{
+	auto planePos = (GetCenterGlobal() + a_pOther->GetCenterGlobal()) / 2.0f;
+
+
+	matrix4 planeM4 = glm::translate(planePos);
+	vector3 color = C_WHITE;
+	auto localPlaneRotation = matrix4(matrix3(m_m4ToWorld));
+
+	switch (axisIndex) {
+	case BTXs::SAT_AX:
+		planeM4 *= glm::rotate(IDENTITY_M4, float(-PI / 2.0f), AXIS_Y) * localPlaneRotation;
+		color = C_RED;
+		break;
+	case BTXs::SAT_AY:
+		planeM4 *= glm::rotate(IDENTITY_M4, float(-PI / 2.0f), AXIS_X) * localPlaneRotation;
+		color = C_GREEN;;
+		break;
+	case BTXs::SAT_AZ:
+		color = C_BLUE;
+		planeM4 *= localPlaneRotation;
+		break;
+	}
+
+	//draw 2 planes so you can see them from every angle
+	m_pModelMngr->AddPlaneToRenderList(planeM4 * glm::scale(vector3(3.5f)), color);
+	m_pModelMngr->AddPlaneToRenderList(planeM4 * glm::scale(vector3(3.5f)) * glm::rotate(IDENTITY_M4, float(PI), AXIS_X), color);
+}
+
 
 bool MyRigidBody::IsColliding(MyRigidBody* const a_pOther)
 {
@@ -126,16 +174,19 @@ bool MyRigidBody::IsColliding(MyRigidBody* const a_pOther)
 	if (bColliding) //they are colliding with bounding sphere
 	{
 		uint nResult = SAT(a_pOther);
-		std::cout << nResult << std::endl;
-		bColliding = nResult != BTXs::SAT_NONE;
+		//std::cout << nResult << std::endl;
+		bColliding = nResult == BTXs::SAT_NONE;
+
 
 		if (bColliding) //The SAT shown they are colliding
 		{
+
 			this->AddCollisionWith(a_pOther);
 			a_pOther->AddCollisionWith(this);
 		}
 		else //they are not colliding
 		{
+			DrawSeperationPlane(nResult, a_pOther);
 			this->RemoveCollisionWith(a_pOther);
 			a_pOther->RemoveCollisionWith(this);
 		}
@@ -270,6 +321,7 @@ void MyRigidBody::SetModelMatrix(matrix4 a_m4ModelMatrix)
 	//we calculate the distance between min and max vectors
 	m_v3ARBBSize = m_v3MaxG - m_v3MinG;
 }
+
 //The big 3
 MyRigidBody::MyRigidBody(std::vector<vector3> a_pointList)
 {
@@ -310,24 +362,6 @@ MyRigidBody::MyRigidBody(std::vector<vector3> a_pointList)
 	//Get the distance between the center and either the min or the max
 	m_fRadius = glm::distance(m_v3Center, m_v3MinL);
 
-	vector3 A1(m_v3MinL.x, m_v3MaxL.y, m_v3MaxL.z);
-	vector3 A2(m_v3MinL.x, m_v3MinL.y, m_v3MaxL.z);
-	vector3 A3(m_v3MaxL.x, m_v3MinL.y, m_v3MaxL.z);
-	vector3 A4(m_v3MaxL.x, m_v3MaxL.y, m_v3MaxL.z);
-	vector3 A5(m_v3MinL.x, m_v3MaxL.y, m_v3MinL.z);
-	vector3 A6(m_v3MinL.x, m_v3MinL.y, m_v3MinL.z);
-	vector3 A7(m_v3MaxL.x, m_v3MinL.y, m_v3MinL.z);
-	vector3 A8(m_v3MaxL.x, m_v3MaxL.y, m_v3MinL.z);
-
-	vector3 ANormX = glm::cross(A8 - A4, A4 - A3);
-	vector3 ANormY = glm::cross(A4 - A8, A4 - A1);
-	vector3 ANormZ = glm::cross(A4 - A1, A4 - A3);
-
-	m_OBB.center = m_v3Center;
-	m_OBB.localAxes[0] = ANormX;
-	m_OBB.localAxes[1] = ANormY;
-	m_OBB.localAxes[2] = ANormZ;
-	m_OBB.halfWidth = m_v3HalfWidth;
 
 }
 MyRigidBody::MyRigidBody(MyRigidBody const& a_pOther)
@@ -415,4 +449,5 @@ void MyRigidBody::AddToRenderList(void)
 		else
 			m_pModelMngr->AddWireCubeToRenderList(glm::translate(GetCenterGlobal()) * glm::scale(m_v3ARBBSize), C_YELLOW);
 	}
+
 }
