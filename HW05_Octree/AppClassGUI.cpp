@@ -33,7 +33,7 @@ void Application::DrawGUI(void)
 			ImGui::Text("	 Page Down: Octant Display --");
 			ImGui::Text("	   Page Up: Octant Display ++");
 			ImGui::Text("		  F5/-: Decrement Octree Level");
-			ImGui::Text("	      F4/+: Increment Octree Level");
+			ImGui::Text("	      F6/+: Increment Octree Level");
 			ImGui::TextColored(v4Color, "-------------------------------------------");
 			ImGui::Text("       Objects: %d", m_uObjects);
 			ImGui::Text(" Total Octants: %d", m_pRoot->GetOctantCount());

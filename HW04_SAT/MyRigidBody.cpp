@@ -14,7 +14,6 @@ uint BTX::MyRigidBody::SAT(MyRigidBody* p_Other) {
 		ProjectOBB(p_Other, axis, min2, max2);
 		//std::cout << "(" << axis[0] << ", " << axis[1] << ", " << axis[2] << ")" << std::endl;
 		if (max1 < min2 || max2 < min1) {
-
 			return GetAxisIndex(axis);
 		}
 	}
@@ -355,7 +354,7 @@ MyRigidBody::MyRigidBody(std::vector<vector3> a_pointList)
 
 	//with the max and the min we calculate the center
 	m_v3Center = (m_v3MaxL + m_v3MinL) / 2.0f;
-
+		
 	//we calculate the distance between min and max vectors
 	m_v3HalfWidth = (m_v3MaxL - m_v3MinL) / 2.0f;
 
